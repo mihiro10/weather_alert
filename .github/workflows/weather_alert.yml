@@ -45,7 +45,7 @@ jobs:
             },
             "thresholds": {
               "weather_category_change": false,
-              "temp_change_c": 8,
+              "temp_change_c": 4,
               "precipitation_change_mm": 5
             },
             "window": {
