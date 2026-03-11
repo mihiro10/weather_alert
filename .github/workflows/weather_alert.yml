@@ -26,7 +26,9 @@ jobs:
         run: pip install requests PyJWT cryptography
 
       - name: Write private key
-        run: echo "${{ secrets.LINEWORKS_PRIVATE_KEY }}" > private.key
+        run: python3 -c "import os; open('private.key','w').write(os.environ['LINEWORKS_PRIVATE_KEY'])"
+        env:
+          LINEWORKS_PRIVATE_KEY: ${{ secrets.LINEWORKS_PRIVATE_KEY }}
 
       - name: Write config
         run: |
