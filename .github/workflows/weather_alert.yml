@@ -58,7 +58,7 @@ jobs:
           ENDOFCONFIG
 
       - name: Run weather alert
-        run: python weather_alert.py
+        run: python weather_alert.py --test-notify
 
       - name: Commit updated forecast state
         run: |
