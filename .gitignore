@@ -1,0 +1,5 @@
+private.key
+config.json
+.token_cache.json
+*.log
+__pycache__/

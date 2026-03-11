@@ -1,0 +1,67 @@
+name: Weather Alert Check
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'   # every 6 hours at :17
+  workflow_dispatch:           # manual trigger button in GitHub UI
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # needed to commit forecasts.json back
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install requests PyJWT cryptography
+
+      - name: Write private key
+        run: echo "${{ secrets.LINEWORKS_PRIVATE_KEY }}" > private.key
+
+      - name: Write config
+        run: |
+          cat > config.json << 'ENDOFCONFIG'
+          {
+            "location": {
+              "name": "Hamamatsu",
+              "latitude": 34.7108,
+              "longitude": 137.7261
+            },
+            "lineworks": {
+              "client_id": "${{ secrets.LINEWORKS_CLIENT_ID }}",
+              "client_secret": "${{ secrets.LINEWORKS_CLIENT_SECRET }}",
+              "service_account": "${{ secrets.LINEWORKS_SERVICE_ACCOUNT }}",
+              "private_key_path": "private.key",
+              "bot_id": "${{ secrets.LINEWORKS_BOT_ID }}",
+              "user_id": "${{ secrets.LINEWORKS_USER_ID }}"
+            },
+            "thresholds": {
+              "weather_category_change": true,
+              "temp_change_c": 3,
+              "precipitation_change_mm": 5
+            },
+            "window": {
+              "days_out_min": 4,
+              "days_out_max": 7
+            }
+          }
+          ENDOFCONFIG
+
+      - name: Run weather alert
+        run: python weather_alert.py
+
+      - name: Commit updated forecast state
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add forecasts.json
+          git diff --staged --quiet || git commit -m "chore: update forecast state [skip ci]"
+          git push
