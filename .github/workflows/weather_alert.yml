@@ -44,8 +44,8 @@ jobs:
               "user_id": "${{ secrets.LINEWORKS_USER_ID }}"
             },
             "thresholds": {
-              "weather_category_change": true,
-              "temp_change_c": 3,
+              "weather_category_change": false,
+              "temp_change_c": 8,
               "precipitation_change_mm": 5
             },
             "window": {
