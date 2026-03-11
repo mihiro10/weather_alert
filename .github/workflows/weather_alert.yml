@@ -60,14 +60,15 @@ jobs:
           ENDOFCONFIG
 
       - name: Debug key
-        run: python3 -c "
-k = open('private.key').read()
-print('Length:', len(k))
-print('Has newlines:', chr(10) in k)
-print('Line count:', k.count(chr(10)))
-print('First 30 chars:', repr(k[:30]))
-print('Last 30 chars:', repr(k[-30:]))
-"
+        run: |
+          python3 - <<'PYEOF'
+          k = open('private.key').read()
+          print('Length:', len(k))
+          print('Has newlines:', chr(10) in k)
+          print('Line count:', k.count(chr(10)))
+          print('First 30 chars:', repr(k[:30]))
+          print('Last 30 chars:', repr(k[-30:]))
+          PYEOF
 
       - name: Run weather alert
         run: python weather_alert.py --test-notify
