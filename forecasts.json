@@ -7,13 +7,19 @@
       "precipitation": 14.25,
       "recorded_at": "2026-03-12T00:33:45.207429"
     },
-    "last_alerted": null,
+    "last_alerted": {
+      "weather_code": 63,
+      "temp_max": 16.0,
+      "temp_min": 10.9,
+      "precipitation": 32.0,
+      "recorded_at": "2026-03-12T16:14:54.010300+09:00"
+    },
     "last_checked": {
       "weather_code": 63,
-      "temp_max": 17.3,
-      "temp_min": 10.3,
-      "precipitation": 14.25,
-      "recorded_at": "2026-03-12T12:13:42.072468+09:00"
+      "temp_max": 16.0,
+      "temp_min": 10.9,
+      "precipitation": 32.0,
+      "recorded_at": "2026-03-12T16:14:54.010300+09:00"
     }
   }
 }
