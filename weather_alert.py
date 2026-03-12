@@ -202,13 +202,17 @@ def detect_changes(baseline: dict, current: dict, thresholds: dict) -> list[str]
 def format_alert(target_date: str, changes: list[str], current: dict, baseline: dict) -> str:
     desc_now = WMO_DESCRIPTION.get(current["weather_code"], "不明")
     desc_base = WMO_DESCRIPTION.get(baseline["weather_code"], "不明")
+    DOW = ["月", "火", "水", "木", "金", "土", "日"]
+    target_dt = date.fromisoformat(target_date)
+    days_out = (target_dt - date.today()).days
+    dow = DOW[target_dt.weekday()]
     lines = [
         "⚠️ 天気予報 変更アラート",
-        f"📅 対象日: {target_date}",
+        f"📅 {target_date} ({dow}) — {days_out}日後",
         f"📌 7日前の予報: {desc_base} / 最高{baseline['temp_max']:.1f}°C / 最低{baseline['temp_min']:.1f}°C / 降水{baseline['precipitation']:.1f}mm",
         f"🌡️ 最新予報:    {desc_now} / 最高{current['temp_max']:.1f}°C / 最低{current['temp_min']:.1f}°C / 降水{current['precipitation']:.1f}mm",
         "",
-        "7日前からの変更:",
+        "変更内容 (7日前→現在):",
     ] + [f"  • {c}" for c in changes]
     return "\n".join(lines)
 
