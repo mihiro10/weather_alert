@@ -1,1 +1,19 @@
-{}
+{
+  "2026-03-19": {
+    "baseline": {
+      "weather_code": 63,
+      "temp_max": 17.3,
+      "temp_min": 10.3,
+      "precipitation": 14.25,
+      "recorded_at": "2026-03-12T00:33:45.207429"
+    },
+    "last_alerted": null,
+    "last_checked": {
+      "weather_code": 63,
+      "temp_max": 17.3,
+      "temp_min": 10.3,
+      "precipitation": 14.25,
+      "recorded_at": "2026-03-12T00:33:45.207429"
+    }
+  }
+}
