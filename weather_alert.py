@@ -12,9 +12,12 @@ import logging
 import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import jwt       # PyJWT
 import requests
+
+JST = ZoneInfo("Asia/Tokyo")
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).parent
@@ -199,20 +202,21 @@ def detect_changes(baseline: dict, current: dict, thresholds: dict) -> list[str]
     return changes
 
 
-def format_alert(target_date: str, changes: list[str], current: dict, baseline: dict) -> str:
+def format_alert(target_date: str, changes: list[str], current: dict, baseline: dict, since_last_alert: bool = False) -> str:
     desc_now = WMO_DESCRIPTION.get(current["weather_code"], "不明")
     desc_base = WMO_DESCRIPTION.get(baseline["weather_code"], "不明")
     DOW = ["月", "火", "水", "木", "金", "土", "日"]
     target_dt = date.fromisoformat(target_date)
-    days_out = (target_dt - date.today()).days
+    days_out = (target_dt - datetime.now(JST).date()).days
     dow = DOW[target_dt.weekday()]
+    change_label = "最終アラート以降の変更:" if since_last_alert else "変更内容 (7日前→現在):"
     lines = [
         "⚠️ 天気予報 変更アラート",
         f"📅 {target_date} ({dow}) — {days_out}日後",
         f"📌 7日前の予報: {desc_base} / 最高{baseline['temp_max']:.1f}°C / 最低{baseline['temp_min']:.1f}°C / 降水{baseline['precipitation']:.1f}mm",
         f"🌡️ 最新予報:    {desc_now} / 最高{current['temp_max']:.1f}°C / 最低{current['temp_min']:.1f}°C / 降水{current['precipitation']:.1f}mm",
         "",
-        "変更内容 (7日前→現在):",
+        change_label,
     ] + [f"  • {c}" for c in changes]
     return "\n".join(lines)
 
@@ -220,7 +224,7 @@ def format_alert(target_date: str, changes: list[str], current: dict, baseline: 
 # ── Main logic ───────────────────────────────────────────────────────────────
 
 def run_check(config: dict, dry_run: bool = False):
-    today = date.today()
+    today = datetime.now(JST).date()
     min_days = config["window"]["days_out_min"]
     max_days = config["window"]["days_out_max"]
 
@@ -232,7 +236,7 @@ def run_check(config: dict, dry_run: bool = False):
     logging.info("Fetching weather forecast from Open-Meteo...")
     current_forecasts = fetch_weather(config)
     stored = load_forecasts()
-    now_str = datetime.now().isoformat()
+    now_str = datetime.now(JST).isoformat()
 
     for date_str in target_dates:
         if date_str not in current_forecasts:
@@ -264,12 +268,23 @@ def run_check(config: dict, dry_run: bool = False):
             # Always measure change vs the frozen 7-day baseline (for display)
             baseline_changes = detect_changes(baseline, current, config["thresholds"])
 
-            # Only notify if something changed since the last alert (avoids 6-hourly spam)
-            compare_for_notify = last_alerted or baseline
-            notify_changes = detect_changes(compare_for_notify, current, config["thresholds"])
+            # Only notify if something changed since the last alert (avoids 6-hourly spam).
+            # After first alert, use half the threshold so cumulative drift is caught (fix 3).
+            if last_alerted:
+                re_thresholds = {
+                    "temp_change_c": config["thresholds"].get("temp_change_c", 4) / 2,
+                    "precipitation_change_mm": config["thresholds"].get("precipitation_change_mm", 5) / 2,
+                    "weather_category_change": config["thresholds"].get("weather_category_change", False),
+                }
+                notify_changes = detect_changes(last_alerted, current, re_thresholds)
+            else:
+                notify_changes = detect_changes(baseline, current, config["thresholds"])
 
             if notify_changes:
-                msg = format_alert(date_str, baseline_changes or notify_changes, current, baseline)
+                # If weather reverted toward baseline, label it as a change since last alert (fix 4)
+                since_last = bool(last_alerted) and not bool(baseline_changes)
+                display_changes = baseline_changes or notify_changes
+                msg = format_alert(date_str, display_changes, current, baseline, since_last_alert=since_last)
                 if dry_run:
                     print(f"[DRY RUN] Would send:\n{msg}\n{'─'*40}")
                 else:
