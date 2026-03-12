@@ -240,9 +240,14 @@ def run_check(config: dict, dry_run: bool = False):
             continue
 
         current = current_forecasts[date_str]
+        days_out = (date.fromisoformat(date_str) - today).days
 
         if date_str not in stored:
-            # First sighting — save as baseline
+            if days_out != max_days:
+                # Missed the 7-day window (e.g. system was down) — skip, no valid baseline
+                logging.info(f"No baseline for {date_str} ({days_out} days out, not {max_days}), skipping.")
+                continue
+            # Exactly 7 days out — freeze as baseline
             stored[date_str] = {
                 "baseline": {**current, "recorded_at": now_str},
                 "last_alerted": None,
