@@ -199,14 +199,16 @@ def detect_changes(baseline: dict, current: dict, thresholds: dict) -> list[str]
     return changes
 
 
-def format_alert(target_date: str, changes: list[str], current: dict) -> str:
-    desc = WMO_DESCRIPTION.get(current["weather_code"], "不明")
+def format_alert(target_date: str, changes: list[str], current: dict, baseline: dict) -> str:
+    desc_now = WMO_DESCRIPTION.get(current["weather_code"], "不明")
+    desc_base = WMO_DESCRIPTION.get(baseline["weather_code"], "不明")
     lines = [
         "⚠️ 天気予報 変更アラート",
         f"📅 対象日: {target_date}",
-        f"🌡️ 最新予報: {desc} / 最高{current['temp_max']:.1f}°C / 最低{current['temp_min']:.1f}°C / 降水{current['precipitation']:.1f}mm",
+        f"📌 7日前の予報: {desc_base} / 最高{baseline['temp_max']:.1f}°C / 最低{baseline['temp_min']:.1f}°C / 降水{baseline['precipitation']:.1f}mm",
+        f"🌡️ 最新予報:    {desc_now} / 最高{current['temp_max']:.1f}°C / 最低{current['temp_min']:.1f}°C / 降水{current['precipitation']:.1f}mm",
         "",
-        "変更内容:",
+        "7日前からの変更:",
     ] + [f"  • {c}" for c in changes]
     return "\n".join(lines)
 
@@ -247,12 +249,18 @@ def run_check(config: dict, dry_run: bool = False):
                 f"Baseline saved for {date_str}: {desc} / {current['temp_max']}°C / {current['temp_min']}°C / {current['precipitation']}mm"
             )
         else:
-            # Compare against last alerted (or baseline if never alerted)
-            compare_to = stored[date_str]["last_alerted"] or stored[date_str]["baseline"]
-            changes = detect_changes(compare_to, current, config["thresholds"])
+            baseline = stored[date_str]["baseline"]
+            last_alerted = stored[date_str]["last_alerted"]
 
-            if changes:
-                msg = format_alert(date_str, changes, current)
+            # Always measure change vs the frozen 7-day baseline (for display)
+            baseline_changes = detect_changes(baseline, current, config["thresholds"])
+
+            # Only notify if something changed since the last alert (avoids 6-hourly spam)
+            compare_for_notify = last_alerted or baseline
+            notify_changes = detect_changes(compare_for_notify, current, config["thresholds"])
+
+            if notify_changes:
+                msg = format_alert(date_str, baseline_changes or notify_changes, current, baseline)
                 if dry_run:
                     print(f"[DRY RUN] Would send:\n{msg}\n{'─'*40}")
                 else:
