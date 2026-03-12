@@ -8,18 +8,35 @@
       "recorded_at": "2026-03-12T00:33:45.207429"
     },
     "last_alerted": {
-      "weather_code": 63,
-      "temp_max": 16.0,
-      "temp_min": 10.9,
-      "precipitation": 32.0,
-      "recorded_at": "2026-03-12T16:14:54.010300+09:00"
+      "weather_code": 3,
+      "temp_max": 17.2,
+      "temp_min": 8.5,
+      "precipitation": 0.0,
+      "recorded_at": "2026-03-13T04:13:20.074087+09:00"
     },
     "last_checked": {
-      "weather_code": 63,
-      "temp_max": 16.0,
-      "temp_min": 10.9,
-      "precipitation": 33.25,
-      "recorded_at": "2026-03-12T22:38:21.576179+09:00"
+      "weather_code": 3,
+      "temp_max": 17.2,
+      "temp_min": 8.5,
+      "precipitation": 0.0,
+      "recorded_at": "2026-03-13T04:13:20.074087+09:00"
+    }
+  },
+  "2026-03-20": {
+    "baseline": {
+      "weather_code": 61,
+      "temp_max": 18.5,
+      "temp_min": 11.0,
+      "precipitation": 3.45,
+      "recorded_at": "2026-03-13T04:13:20.074087+09:00"
+    },
+    "last_alerted": null,
+    "last_checked": {
+      "weather_code": 61,
+      "temp_max": 18.5,
+      "temp_min": 11.0,
+      "precipitation": 3.45,
+      "recorded_at": "2026-03-13T04:13:20.074087+09:00"
     }
   }
 }
