@@ -64,6 +64,53 @@ GROUP_LABEL = {
     5: "⛈️ 雷雨",
 }
 
+# ── Business impact rules ─────────────────────────────────────────────────────
+# Each rule evaluates (current, baseline) and returns action strings if matched.
+# Rules are additive — all matching rules apply.
+BUSINESS_RULES = [
+    {
+        # Midsummer heat: strong shift to cold items
+        "condition": lambda cur, base: cur["temp_max"] >= 30,
+        "actions": ["🍜 冷やし麺・冷製メニューを+30%増産", "🔥 温かいメニューを-20%削減"],
+    },
+    {
+        # Warm day: moderate shift to cold items
+        "condition": lambda cur, base: 25 <= cur["temp_max"] < 30,
+        "actions": ["🍜 冷やし麺・冷製メニューを+15%増産"],
+    },
+    {
+        # Hotter than originally forecast (even if not absolutely hot)
+        "condition": lambda cur, base: cur["temp_max"] - base["temp_max"] >= 4 and cur["temp_max"] < 25,
+        "actions": ["🌡️ 予報より高温 — 冷製品の仕入れを+10%増量検討"],
+    },
+    {
+        # Cold day: shift to warm items
+        "condition": lambda cur, base: cur["temp_max"] <= 10,
+        "actions": ["🍲 温かいメニューを+20%増産", "🍜 冷やし麺の仕入れを最小限に"],
+    },
+    {
+        # Rain or heavy precipitation: fewer walk-in customers
+        "condition": lambda cur, base: WMO_GROUP.get(cur["weather_code"], 0) >= 3 or cur["precipitation"] >= 10,
+        "actions": ["🌧️ 来店客減少を想定 — 店頭向け弁当を-15%削減", "📦 デリバリー向け仕込みを+10%増量"],
+    },
+    {
+        # Weather clears up from expected rain: more foot traffic than planned
+        "condition": lambda cur, base: (
+            WMO_GROUP.get(cur["weather_code"], 0) <= 1 and
+            WMO_GROUP.get(base["weather_code"], 0) >= 3
+        ),
+        "actions": ["☀️ 天気回復 — 来店客増加を想定し店頭向け弁当を+15%増量"],
+    },
+]
+
+
+def get_business_impact(current: dict, baseline: dict) -> list[str]:
+    actions = []
+    for rule in BUSINESS_RULES:
+        if rule["condition"](current, baseline):
+            actions.extend(rule["actions"])
+    return actions
+
 
 # ── Config / state helpers ───────────────────────────────────────────────────
 
@@ -218,6 +265,11 @@ def format_alert(target_date: str, changes: list[str], current: dict, baseline: 
         "",
         change_label,
     ] + [f"  • {c}" for c in changes]
+
+    impact = get_business_impact(current, baseline)
+    if impact:
+        lines += ["", "💼 推奨アクション:"] + [f"  {a}" for a in impact]
+
     return "\n".join(lines)
 
 
