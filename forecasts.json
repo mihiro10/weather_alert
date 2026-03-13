@@ -16,10 +16,10 @@
     },
     "last_checked": {
       "weather_code": 3,
-      "temp_max": 17.2,
-      "temp_min": 8.5,
+      "temp_max": 16.6,
+      "temp_min": 9.1,
       "precipitation": 0.0,
-      "recorded_at": "2026-03-13T12:10:22.265519+09:00"
+      "recorded_at": "2026-03-13T16:13:59.647403+09:00"
     }
   },
   "2026-03-20": {
@@ -33,10 +33,10 @@
     "last_alerted": null,
     "last_checked": {
       "weather_code": 61,
-      "temp_max": 17.5,
+      "temp_max": 19.5,
       "temp_min": 11.0,
-      "precipitation": 3.45,
-      "recorded_at": "2026-03-13T12:10:22.265519+09:00"
+      "precipitation": 1.5,
+      "recorded_at": "2026-03-13T16:13:59.647403+09:00"
     }
   }
 }
