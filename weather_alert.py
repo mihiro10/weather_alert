@@ -2,8 +2,9 @@
 """
 Weather Alert System — Hamamatsu, Japan
 
-Monitors 4–7 day forecasts and sends a LINE Works notification
-when the forecast changes significantly from the baseline.
+Detects days with anomalous weather (outliers vs surrounding days in the
+8-day forecast) and sends LINE Works notifications with business action
+recommendations.
 """
 
 import argparse
@@ -42,8 +43,7 @@ WMO_DESCRIPTION = {
     96: "雹を伴う雷雨", 99: "雹を伴う雷雨",
 }
 
-# Broad groups used for "did the weather type change?" detection
-# 0=clear, 1=cloudy, 2=fog, 3=rain, 4=snow, 5=thunderstorm
+# Broad groups: 0=clear, 1=cloudy, 2=fog, 3=rain, 4=snow, 5=thunderstorm
 WMO_GROUP = {
     0: 0, 1: 0,
     2: 1, 3: 1,
@@ -65,49 +65,43 @@ GROUP_LABEL = {
 }
 
 # ── Business impact rules ─────────────────────────────────────────────────────
-# Each rule evaluates (current, baseline) and returns action strings if matched.
-# Rules are additive — all matching rules apply.
+# ctx = {"avg_temp_max": float, "majority_group": int}
 BUSINESS_RULES = [
     {
-        # Midsummer heat: strong shift to cold items
-        "condition": lambda cur, base: cur["temp_max"] >= 30,
+        "condition": lambda cur, ctx: cur["temp_max"] >= 30,
         "actions": ["🍜 冷やし麺・冷製メニューを+30%増産", "🔥 温かいメニューを-20%削減"],
     },
     {
-        # Warm day: moderate shift to cold items
-        "condition": lambda cur, base: 25 <= cur["temp_max"] < 30,
+        "condition": lambda cur, ctx: 25 <= cur["temp_max"] < 30,
         "actions": ["🍜 冷やし麺・冷製メニューを+15%増産"],
     },
     {
-        # Hotter than originally forecast (even if not absolutely hot)
-        "condition": lambda cur, base: cur["temp_max"] - base["temp_max"] >= 4 and cur["temp_max"] < 25,
-        "actions": ["🌡️ 予報より高温 — 冷製品の仕入れを+10%増量検討"],
+        # Warmer than surrounding days but not absolutely hot
+        "condition": lambda cur, ctx: cur["temp_max"] - ctx["avg_temp_max"] >= 4 and cur["temp_max"] < 25,
+        "actions": ["🌡️ 周辺日より高温 — 冷製品の仕入れを+10%増量検討"],
     },
     {
-        # Cold day: shift to warm items
-        "condition": lambda cur, base: cur["temp_max"] <= 10,
+        "condition": lambda cur, ctx: cur["temp_max"] <= 10,
         "actions": ["🍲 温かいメニューを+20%増産", "🍜 冷やし麺の仕入れを最小限に"],
     },
     {
-        # Rain or heavy precipitation: fewer walk-in customers
-        "condition": lambda cur, base: WMO_GROUP.get(cur["weather_code"], 0) >= 3 or cur["precipitation"] >= 10,
+        "condition": lambda cur, ctx: WMO_GROUP.get(cur["weather_code"], 0) >= 3 or cur["precipitation"] >= 10,
         "actions": ["🌧️ 来店客減少を想定 — 店頭向け弁当を-15%削減", "📦 デリバリー向け仕込みを+10%増量"],
     },
     {
-        # Weather clears up from expected rain: more foot traffic than planned
-        "condition": lambda cur, base: (
-            WMO_GROUP.get(cur["weather_code"], 0) <= 1 and
-            WMO_GROUP.get(base["weather_code"], 0) >= 3
+        # Target day is clear while surrounding days are mostly rain
+        "condition": lambda cur, ctx: (
+            WMO_GROUP.get(cur["weather_code"], 0) <= 1 and ctx["majority_group"] >= 3
         ),
-        "actions": ["☀️ 天気回復 — 来店客増加を想定し店頭向け弁当を+15%増量"],
+        "actions": ["☀️ 雨続きの中でこの日は晴れ — 来店客増加を想定し店頭向け弁当を+15%増量"],
     },
 ]
 
 
-def get_business_impact(current: dict, baseline: dict) -> list[str]:
+def get_business_impact(current: dict, ctx: dict) -> list[str]:
     actions = []
     for rule in BUSINESS_RULES:
-        if rule["condition"](current, baseline):
+        if rule["condition"](current, ctx):
             actions.extend(rule["actions"])
     return actions
 
@@ -137,7 +131,6 @@ def get_access_token(config: dict) -> str:
     """Return a valid LINE Works access token, refreshing via Service Account JWT if needed."""
     lw = config["lineworks"]
 
-    # Use cached token if still valid (with 5-min buffer)
     if TOKEN_CACHE_PATH.exists():
         with open(TOKEN_CACHE_PATH) as f:
             cache = json.load(f)
@@ -214,59 +207,75 @@ def fetch_weather(config: dict) -> dict:
     }
 
 
-# ── Change detection ─────────────────────────────────────────────────────────
+# ── Anomaly detection ─────────────────────────────────────────────────────────
 
-def detect_changes(baseline: dict, current: dict, thresholds: dict) -> list[str]:
-    """Return a list of human-readable change descriptions (empty = no significant change)."""
-    changes = []
+def detect_anomaly(target_date: str, all_forecasts: dict, thresholds: dict) -> tuple[list[str], dict]:
+    """
+    Compare target_date against the ±3 surrounding days in the 8-day forecast.
+    Returns (anomaly descriptions, context summary dict).
+    Context summary: {"avg_temp_max": float, "avg_precip": float, "majority_group": int}
+    """
+    target_dt = date.fromisoformat(target_date)
+    temp_threshold = thresholds.get("temp_change_c", 6)
 
-    # Weather group change
-    if thresholds.get("weather_category_change", True):
-        old_g = WMO_GROUP.get(baseline["weather_code"], -1)
-        new_g = WMO_GROUP.get(current["weather_code"], -1)
-        if old_g != new_g:
-            changes.append(
-                f"天気: {GROUP_LABEL.get(old_g, '?')} → {GROUP_LABEL.get(new_g, '?')}"
-            )
+    context = []
+    for delta in [-3, -2, -1, 1, 2, 3]:
+        d = (target_dt + timedelta(days=delta)).isoformat()
+        if d in all_forecasts:
+            context.append(all_forecasts[d])
 
-    # Max temperature
-    t = thresholds.get("temp_change_c", 3)
-    for key, label in [("temp_max", "最高気温"), ("temp_min", "最低気温")]:
-        diff = current[key] - baseline[key]
-        if abs(diff) >= t:
-            sign = "+" if diff > 0 else ""
-            changes.append(f"{label}: {baseline[key]:.1f}°C → {current[key]:.1f}°C ({sign}{diff:.1f}°C)")
+    if not context:
+        return [], {}
 
-    # Precipitation
-    p = thresholds.get("precipitation_change_mm", 5)
-    diff = current["precipitation"] - baseline["precipitation"]
-    if abs(diff) >= p:
-        sign = "+" if diff > 0 else ""
-        changes.append(
-            f"降水量: {baseline['precipitation']:.1f}mm → {current['precipitation']:.1f}mm ({sign}{diff:.1f}mm)"
+    avg_temp_max = sum(c["temp_max"] for c in context) / len(context)
+    avg_precip = sum(c["precipitation"] for c in context) / len(context)
+    groups = [WMO_GROUP.get(c["weather_code"], 0) for c in context]
+    majority_group = max(set(groups), key=groups.count)
+
+    target = all_forecasts[target_date]
+    target_group = WMO_GROUP.get(target["weather_code"], 0)
+
+    anomalies = []
+
+    # Temperature outlier vs surrounding days
+    temp_diff = target["temp_max"] - avg_temp_max
+    if abs(temp_diff) >= temp_threshold:
+        sign = "+" if temp_diff > 0 else ""
+        anomalies.append(
+            f"気温が周辺日より{sign}{temp_diff:.1f}°C "
+            f"(周辺平均 {avg_temp_max:.1f}°C → この日 {target['temp_max']:.1f}°C)"
         )
 
-    return changes
+    # Weather group outlier — only flag when involving rain/snow/storm
+    if target_group != majority_group and (target_group >= 3 or majority_group >= 3):
+        anomalies.append(
+            f"天気が周辺日と異なる: 周辺は{GROUP_LABEL.get(majority_group, '?')}が多い中、"
+            f"この日は{GROUP_LABEL.get(target_group, '?')}"
+        )
+
+    ctx = {"avg_temp_max": avg_temp_max, "avg_precip": avg_precip, "majority_group": majority_group}
+    return anomalies, ctx
 
 
-def format_alert(target_date: str, changes: list[str], current: dict, baseline: dict, since_last_alert: bool = False) -> str:
+# ── Alert formatting ──────────────────────────────────────────────────────────
+
+def format_alert(target_date: str, anomalies: list[str], current: dict, ctx: dict) -> str:
     desc_now = WMO_DESCRIPTION.get(current["weather_code"], "不明")
-    desc_base = WMO_DESCRIPTION.get(baseline["weather_code"], "不明")
     DOW = ["月", "火", "水", "木", "金", "土", "日"]
     target_dt = date.fromisoformat(target_date)
     days_out = (target_dt - datetime.now(JST).date()).days
     dow = DOW[target_dt.weekday()]
-    change_label = "最終アラート以降の変更:" if since_last_alert else "変更内容 (7日前→現在):"
-    lines = [
-        "⚠️ 天気予報 変更アラート",
-        f"📅 {target_date} ({dow}) — {days_out}日後",
-        f"📌 7日前の予報: {desc_base} / 最高{baseline['temp_max']:.1f}°C / 最低{baseline['temp_min']:.1f}°C / 降水{baseline['precipitation']:.1f}mm",
-        f"🌡️ 最新予報:    {desc_now} / 最高{current['temp_max']:.1f}°C / 最低{current['temp_min']:.1f}°C / 降水{current['precipitation']:.1f}mm",
-        "",
-        change_label,
-    ] + [f"  • {c}" for c in changes]
 
-    impact = get_business_impact(current, baseline)
+    lines = [
+        "⚠️ 天気 異常日アラート",
+        f"📅 {target_date} ({dow}) — {days_out}日後",
+        f"🌡️ この日の予報: {desc_now} / 最高{current['temp_max']:.1f}°C / 最低{current['temp_min']:.1f}°C / 降水{current['precipitation']:.1f}mm",
+        f"📊 周辺日の平均: {GROUP_LABEL.get(ctx['majority_group'], '?')} / 最高{ctx['avg_temp_max']:.1f}°C",
+        "",
+        "異常点:",
+    ] + [f"  • {a}" for a in anomalies]
+
+    impact = get_business_impact(current, ctx)
     if impact:
         lines += ["", "💼 推奨アクション:"] + [f"  {a}" for a in impact]
 
@@ -286,67 +295,47 @@ def run_check(config: dict, dry_run: bool = False):
     ]
 
     logging.info("Fetching weather forecast from Open-Meteo...")
-    current_forecasts = fetch_weather(config)
+    all_forecasts = fetch_weather(config)
     stored = load_forecasts()
     now_str = datetime.now(JST).isoformat()
 
     for date_str in target_dates:
-        if date_str not in current_forecasts:
+        if date_str not in all_forecasts:
             logging.warning(f"No forecast data for {date_str}, skipping.")
             continue
 
-        current = current_forecasts[date_str]
-        days_out = (date.fromisoformat(date_str) - today).days
+        current = all_forecasts[date_str]
+        anomalies, ctx = detect_anomaly(date_str, all_forecasts, config["thresholds"])
 
-        if date_str not in stored:
-            if days_out != max_days:
-                # Missed the 7-day window (e.g. system was down) — skip, no valid baseline
-                logging.info(f"No baseline for {date_str} ({days_out} days out, not {max_days}), skipping.")
-                continue
-            # Exactly 7 days out — freeze as baseline
-            stored[date_str] = {
-                "baseline": {**current, "recorded_at": now_str},
-                "last_alerted": None,
-                "last_checked": {**current, "recorded_at": now_str},
-            }
-            desc = WMO_DESCRIPTION.get(current["weather_code"], "?")
-            logging.info(
-                f"Baseline saved for {date_str}: {desc} / {current['temp_max']}°C / {current['temp_min']}°C / {current['precipitation']}mm"
+        if not anomalies:
+            logging.info(f"No anomaly for {date_str}.")
+            stored.setdefault(date_str, {})["last_checked"] = now_str
+            continue
+
+        last_alerted = stored.get(date_str, {}).get("last_alerted")
+
+        # Dedup: skip if same anomaly was already sent (weather group and temp unchanged)
+        if last_alerted:
+            temp_thresh = config["thresholds"].get("temp_change_c", 6) / 2
+            temp_unchanged = abs(current["temp_max"] - last_alerted["temp_max"]) < temp_thresh
+            group_unchanged = (
+                WMO_GROUP.get(current["weather_code"], 0) ==
+                WMO_GROUP.get(last_alerted["weather_code"], 0)
             )
+            if temp_unchanged and group_unchanged:
+                logging.info(f"Same anomaly already alerted for {date_str}, skipping.")
+                stored.setdefault(date_str, {})["last_checked"] = now_str
+                continue
+
+        msg = format_alert(date_str, anomalies, current, ctx)
+        if dry_run:
+            print(f"[DRY RUN] Would send:\n{msg}\n{'─'*40}")
         else:
-            baseline = stored[date_str]["baseline"]
-            last_alerted = stored[date_str]["last_alerted"]
+            send_message(config, msg)
+            logging.info(f"Alert sent for {date_str}")
 
-            # Always measure change vs the frozen 7-day baseline (for display)
-            baseline_changes = detect_changes(baseline, current, config["thresholds"])
-
-            # Only notify if something changed since the last alert (avoids 6-hourly spam).
-            # After first alert, use half the threshold so cumulative drift is caught (fix 3).
-            if last_alerted:
-                re_thresholds = {
-                    "temp_change_c": config["thresholds"].get("temp_change_c", 4) / 2,
-                    "precipitation_change_mm": config["thresholds"].get("precipitation_change_mm", 5) / 2,
-                    "weather_category_change": config["thresholds"].get("weather_category_change", False),
-                }
-                notify_changes = detect_changes(last_alerted, current, re_thresholds)
-            else:
-                notify_changes = detect_changes(baseline, current, config["thresholds"])
-
-            if notify_changes:
-                # If weather reverted toward baseline, label it as a change since last alert (fix 4)
-                since_last = bool(last_alerted) and not bool(baseline_changes)
-                display_changes = baseline_changes or notify_changes
-                msg = format_alert(date_str, display_changes, current, baseline, since_last_alert=since_last)
-                if dry_run:
-                    print(f"[DRY RUN] Would send:\n{msg}\n{'─'*40}")
-                else:
-                    send_message(config, msg)
-                    logging.info(f"Alert sent for {date_str}")
-                stored[date_str]["last_alerted"] = {**current, "recorded_at": now_str}
-            else:
-                logging.info(f"No significant change for {date_str}.")
-
-            stored[date_str]["last_checked"] = {**current, "recorded_at": now_str}
+        stored.setdefault(date_str, {})["last_alerted"] = {**current, "recorded_at": now_str}
+        stored[date_str]["last_checked"] = now_str
 
     # Clean up past dates
     for d in [d for d in stored if d < today.isoformat()]:
@@ -356,11 +345,10 @@ def run_check(config: dict, dry_run: bool = False):
     save_forecasts(stored)
 
 
-
 # ── Entry point ──────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Hamamatsu weather change alert")
+    parser = argparse.ArgumentParser(description="Hamamatsu weather anomaly alert")
     parser.add_argument("--dry-run", action="store_true",
                         help="Fetch and compare without sending notifications")
     parser.add_argument("--test-notify", action="store_true",
