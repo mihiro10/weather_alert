@@ -216,8 +216,7 @@ def detect_anomaly(target_date: str, all_forecasts: dict, thresholds: dict) -> t
     Context summary: {"avg_temp_max": float, "avg_precip": float, "majority_group": int}
     """
     target_dt = date.fromisoformat(target_date)
-    temp_threshold = thresholds.get("temp_change_c", 6)
-    precip_threshold = thresholds.get("precipitation_change_mm", 8)
+    temp_threshold = thresholds.get("temp_change_c", 4)
 
     context = []
     for delta in [-3, -2, -1, 1, 2, 3]:
@@ -238,6 +237,11 @@ def detect_anomaly(target_date: str, all_forecasts: dict, thresholds: dict) -> t
 
     anomalies = []
 
+    # Rain/snow/storm on this day
+    if target_group >= 3:
+        desc = WMO_DESCRIPTION.get(target["weather_code"], "悪天候")
+        anomalies.append(f"{GROUP_LABEL.get(target_group, '?')} ({desc} / {target['precipitation']:.1f}mm)")
+
     # Temperature outlier vs surrounding days
     temp_diff = target["temp_max"] - avg_temp_max
     if abs(temp_diff) >= temp_threshold:
@@ -245,21 +249,6 @@ def detect_anomaly(target_date: str, all_forecasts: dict, thresholds: dict) -> t
         anomalies.append(
             f"気温が周辺日より{sign}{temp_diff:.1f}°C "
             f"(周辺平均 {avg_temp_max:.1f}°C → この日 {target['temp_max']:.1f}°C)"
-        )
-
-    # Precipitation outlier vs surrounding days
-    precip_diff = target["precipitation"] - avg_precip
-    if precip_diff >= precip_threshold:
-        anomalies.append(
-            f"降水量が周辺日より+{precip_diff:.1f}mm "
-            f"(周辺平均 {avg_precip:.1f}mm → この日 {target['precipitation']:.1f}mm)"
-        )
-
-    # Weather group outlier — only flag when involving rain/snow/storm
-    if target_group != majority_group and (target_group >= 3 or majority_group >= 3):
-        anomalies.append(
-            f"天気が周辺日と異なる: 周辺は{GROUP_LABEL.get(majority_group, '?')}が多い中、"
-            f"この日は{GROUP_LABEL.get(target_group, '?')}"
         )
 
     ctx = {"avg_temp_max": avg_temp_max, "avg_precip": avg_precip, "majority_group": majority_group}
