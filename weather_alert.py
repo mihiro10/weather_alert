@@ -78,7 +78,7 @@ BUSINESS_RULES = [
     {
         # Warmer than surrounding days but not absolutely hot
         "condition": lambda cur, ctx: cur["temp_max"] - ctx["avg_temp_max"] >= 4 and cur["temp_max"] < 25,
-        "actions": ["🌡️ 周辺日より高温 — 冷製品の仕入れを+10%増量検討"],
+        "actions": ["🍜 周辺日より高温 — 麺を+10%増産"],
     },
     {
         "condition": lambda cur, ctx: cur["temp_max"] <= 10,
@@ -86,7 +86,7 @@ BUSINESS_RULES = [
     },
     {
         "condition": lambda cur, ctx: WMO_GROUP.get(cur["weather_code"], 0) >= 3 or cur["precipitation"] >= 10,
-        "actions": ["🌧️ 来店客減少を想定 — 店頭向け弁当を-15%削減", "📦 デリバリー向け仕込みを+10%増量"],
+        "actions": ["🏭 雨天 — 工場製品の発注を削減"],
     },
     {
         # Target day is clear while surrounding days are mostly rain
