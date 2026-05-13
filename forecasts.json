@@ -40,7 +40,7 @@
     }
   },
   "2026-05-17": {
-    "last_checked": "2026-05-13T13:15:16.694949+09:00",
+    "last_checked": "2026-05-13T18:20:48.761186+09:00",
     "last_alerted": {
       "weather_code": 51,
       "temp_max": 25.6,
@@ -50,20 +50,20 @@
     }
   },
   "2026-05-18": {
-    "last_checked": "2026-05-13T13:15:16.694949+09:00",
+    "last_checked": "2026-05-13T18:20:48.761186+09:00",
     "last_alerted": {
-      "weather_code": 51,
-      "temp_max": 25.0,
-      "temp_min": 17.6,
-      "precipitation": 0.8,
-      "recorded_at": "2026-05-11T19:01:36.358660+09:00"
+      "weather_code": 0,
+      "temp_max": 29.8,
+      "temp_min": 15.5,
+      "precipitation": 0.0,
+      "recorded_at": "2026-05-13T18:20:48.761186+09:00"
     }
   },
   "2026-05-19": {
-    "last_checked": "2026-05-13T13:15:16.694949+09:00"
+    "last_checked": "2026-05-13T18:20:48.761186+09:00"
   },
   "2026-05-20": {
-    "last_checked": "2026-05-13T13:15:16.694949+09:00",
+    "last_checked": "2026-05-13T18:20:48.761186+09:00",
     "last_alerted": {
       "weather_code": 51,
       "temp_max": 24.6,
