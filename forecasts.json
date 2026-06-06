@@ -1,14 +1,4 @@
 {
-  "2026-06-06": {
-    "last_checked": "2026-06-02T19:57:24.203600+09:00",
-    "last_alerted": {
-      "weather_code": 51,
-      "temp_max": 21.9,
-      "temp_min": 18.6,
-      "precipitation": 0.8,
-      "recorded_at": "2026-05-31T04:43:26.156237+09:00"
-    }
-  },
   "2026-06-07": {
     "last_alerted": {
       "weather_code": 63,
@@ -57,10 +47,10 @@
       "precipitation": 1.2,
       "recorded_at": "2026-06-04T02:20:30.955420+09:00"
     },
-    "last_checked": "2026-06-06T23:11:22.517716+09:00"
+    "last_checked": "2026-06-07T04:48:31.538226+09:00"
   },
   "2026-06-12": {
-    "last_checked": "2026-06-06T23:11:22.517716+09:00",
+    "last_checked": "2026-06-07T04:48:31.538226+09:00",
     "last_alerted": {
       "weather_code": 51,
       "temp_max": 24.0,
@@ -77,6 +67,16 @@
       "precipitation": 1.2,
       "recorded_at": "2026-06-06T05:16:46.645417+09:00"
     },
-    "last_checked": "2026-06-06T23:11:22.517716+09:00"
+    "last_checked": "2026-06-07T04:48:31.538226+09:00"
+  },
+  "2026-06-14": {
+    "last_alerted": {
+      "weather_code": 51,
+      "temp_max": 25.1,
+      "temp_min": 16.6,
+      "precipitation": 2.4,
+      "recorded_at": "2026-06-07T04:48:31.538226+09:00"
+    },
+    "last_checked": "2026-06-07T04:48:31.538226+09:00"
   }
 }
