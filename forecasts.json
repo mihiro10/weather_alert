@@ -47,27 +47,27 @@
       "precipitation": 4.2,
       "recorded_at": "2026-07-14T17:29:38.940260+09:00"
     },
-    "last_checked": "2026-07-17T17:30:11.436917+09:00"
+    "last_checked": "2026-07-17T23:05:54.347591+09:00"
   },
   "2026-07-22": {
-    "last_checked": "2026-07-17T17:30:11.436917+09:00",
+    "last_checked": "2026-07-17T23:05:54.347591+09:00",
     "last_alerted": {
-      "weather_code": 51,
-      "temp_max": 37.6,
-      "temp_min": 26.2,
-      "precipitation": 0.3,
-      "recorded_at": "2026-07-17T17:30:11.436917+09:00"
+      "weather_code": 1,
+      "temp_max": 37.0,
+      "temp_min": 27.1,
+      "precipitation": 0.0,
+      "recorded_at": "2026-07-17T23:05:54.347591+09:00"
     }
   },
   "2026-07-23": {
     "last_alerted": {
-      "weather_code": 95,
-      "temp_max": 32.8,
+      "weather_code": 51,
+      "temp_max": 36.9,
       "temp_min": 26.7,
-      "precipitation": 6.2,
-      "recorded_at": "2026-07-17T17:30:11.436917+09:00"
+      "precipitation": 2.6,
+      "recorded_at": "2026-07-17T23:05:54.347591+09:00"
     },
-    "last_checked": "2026-07-17T17:30:11.436917+09:00"
+    "last_checked": "2026-07-17T23:05:54.347591+09:00"
   },
   "2026-07-24": {
     "last_alerted": {
@@ -77,6 +77,6 @@
       "precipitation": 19.0,
       "recorded_at": "2026-07-17T17:30:11.436917+09:00"
     },
-    "last_checked": "2026-07-17T17:30:11.436917+09:00"
+    "last_checked": "2026-07-17T23:05:54.347591+09:00"
   }
 }
