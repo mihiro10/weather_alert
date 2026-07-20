@@ -1,14 +1,4 @@
 {
-  "2026-07-20": {
-    "last_alerted": {
-      "weather_code": 51,
-      "temp_max": 31.7,
-      "temp_min": 26.5,
-      "precipitation": 2.7,
-      "recorded_at": "2026-07-15T23:13:25.983393+09:00"
-    },
-    "last_checked": "2026-07-16T23:26:22.194309+09:00"
-  },
   "2026-07-21": {
     "last_alerted": {
       "weather_code": 53,
@@ -51,32 +41,42 @@
   },
   "2026-07-25": {
     "last_alerted": {
-      "weather_code": 96,
-      "temp_max": 39.2,
-      "temp_min": 25.5,
+      "weather_code": 95,
+      "temp_max": 32.4,
+      "temp_min": 27.1,
       "precipitation": 3.8,
-      "recorded_at": "2026-07-20T23:34:47.582214+09:00"
+      "recorded_at": "2026-07-21T04:58:46.992330+09:00"
     },
-    "last_checked": "2026-07-20T23:34:47.582214+09:00"
+    "last_checked": "2026-07-21T04:58:46.992330+09:00"
   },
   "2026-07-26": {
-    "last_checked": "2026-07-20T23:34:47.582214+09:00",
+    "last_checked": "2026-07-21T04:58:46.992330+09:00",
     "last_alerted": {
       "weather_code": 95,
-      "temp_max": 32.1,
-      "temp_min": 26.6,
-      "precipitation": 3.6,
-      "recorded_at": "2026-07-20T04:35:26.279583+09:00"
+      "temp_max": 28.7,
+      "temp_min": 23.9,
+      "precipitation": 10.0,
+      "recorded_at": "2026-07-21T04:58:46.992330+09:00"
     }
   },
   "2026-07-27": {
     "last_alerted": {
       "weather_code": 51,
-      "temp_max": 34.2,
-      "temp_min": 26.0,
-      "precipitation": 1.2,
-      "recorded_at": "2026-07-20T18:37:30.532509+09:00"
+      "temp_max": 28.5,
+      "temp_min": 23.9,
+      "precipitation": 3.6,
+      "recorded_at": "2026-07-21T04:58:46.992330+09:00"
     },
-    "last_checked": "2026-07-20T23:34:47.582214+09:00"
+    "last_checked": "2026-07-21T04:58:46.992330+09:00"
+  },
+  "2026-07-28": {
+    "last_alerted": {
+      "weather_code": 51,
+      "temp_max": 32.6,
+      "temp_min": 24.7,
+      "precipitation": 0.6,
+      "recorded_at": "2026-07-21T04:58:46.992330+09:00"
+    },
+    "last_checked": "2026-07-21T04:58:46.992330+09:00"
   }
 }
