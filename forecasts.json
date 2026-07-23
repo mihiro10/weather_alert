@@ -1,14 +1,4 @@
 {
-  "2026-07-23": {
-    "last_alerted": {
-      "weather_code": 0,
-      "temp_max": 38.9,
-      "temp_min": 28.1,
-      "precipitation": 0.0,
-      "recorded_at": "2026-07-18T17:11:10.113298+09:00"
-    },
-    "last_checked": "2026-07-19T22:56:10.654911+09:00"
-  },
   "2026-07-24": {
     "last_alerted": {
       "weather_code": 0,
@@ -51,16 +41,16 @@
   },
   "2026-07-28": {
     "last_alerted": {
-      "weather_code": 95,
-      "temp_max": 35.8,
-      "temp_min": 25.5,
-      "precipitation": 1.8,
-      "recorded_at": "2026-07-23T23:36:06.901825+09:00"
+      "weather_code": 96,
+      "temp_max": 29.8,
+      "temp_min": 24.7,
+      "precipitation": 8.4,
+      "recorded_at": "2026-07-24T04:48:56.591767+09:00"
     },
-    "last_checked": "2026-07-23T23:36:06.901825+09:00"
+    "last_checked": "2026-07-24T04:48:56.591767+09:00"
   },
   "2026-07-29": {
-    "last_checked": "2026-07-23T23:36:06.901825+09:00",
+    "last_checked": "2026-07-24T04:48:56.591767+09:00",
     "last_alerted": {
       "weather_code": 2,
       "temp_max": 38.0,
@@ -70,7 +60,7 @@
     }
   },
   "2026-07-30": {
-    "last_checked": "2026-07-23T23:36:06.901825+09:00",
+    "last_checked": "2026-07-24T04:48:56.591767+09:00",
     "last_alerted": {
       "weather_code": 2,
       "temp_max": 38.2,
@@ -78,5 +68,15 @@
       "precipitation": 0.0,
       "recorded_at": "2026-07-23T17:46:36.534230+09:00"
     }
+  },
+  "2026-07-31": {
+    "last_alerted": {
+      "weather_code": 3,
+      "temp_max": 38.8,
+      "temp_min": 25.2,
+      "precipitation": 0.0,
+      "recorded_at": "2026-07-24T04:48:56.591767+09:00"
+    },
+    "last_checked": "2026-07-24T04:48:56.591767+09:00"
   }
 }
